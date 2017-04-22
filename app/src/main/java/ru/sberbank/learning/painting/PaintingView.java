@@ -88,13 +88,16 @@ public class PaintingView extends View {
                 ));
                 return true;
             case MotionEvent.ACTION_MOVE:
-                PointF point = lastPoints.get(
-                        event.getPointerId(event.getActionIndex()));
-                float x = event.getX(event.getActionIndex());
-                float y = event.getY(event.getActionIndex());
+                for (int i=0; i < event.getPointerCount(); i++) {
+                    PointF point = lastPoints.get(
+                            event.getPointerId(event.getActionIndex()));
+                    float x = event.getX(event.getActionIndex());
+                    float y = event.getY(event.getActionIndex());
 
-                bitmapCanvas.drawLine(point.x, point.y, x, y, linePaint);
-                point.set(x, y);
+                    bitmapCanvas.drawLine(point.x, point.y, x, y, linePaint);
+                    point.set(x, y);
+                }
+
                 invalidate();
                 return true;
             case MotionEvent.ACTION_POINTER_UP:
