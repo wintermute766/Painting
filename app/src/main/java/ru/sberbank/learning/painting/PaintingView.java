@@ -4,9 +4,13 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
+import android.graphics.PorterDuff;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -18,6 +22,8 @@ public class PaintingView extends View {
 
     private float lastX;
     private float lastY;
+
+    private SparseArray<PointF> lastPoints = new SparseArray<>(10);
 
     private Bitmap cacheBitmap;
     private Canvas bitmapCanvas;
@@ -72,16 +78,26 @@ public class PaintingView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        switch (event.getAction()) {
+        switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                lastX = event.getX();
-                lastY = event.getY();
+            case MotionEvent.ACTION_POINTER_DOWN:
+                int pointerId = event.getPointerId(event.getActionIndex());
+                lastPoints.put(pointerId, new PointF(
+                        event.getX(event.getActionIndex()),
+                        event.getY(event.getActionIndex())
+                ));
                 return true;
             case MotionEvent.ACTION_MOVE:
-                bitmapCanvas.drawLine(lastX, lastY, event.getX(), event.getY(), linePaint);
-                lastX = event.getX();
-                lastY = event.getY();
+                PointF point = lastPoints.get(
+                        event.getPointerId(event.getActionIndex()));
+                float x = event.getX(event.getActionIndex());
+                float y = event.getY(event.getActionIndex());
+
+                bitmapCanvas.drawLine(point.x, point.y, x, y, linePaint);
+                point.set(x, y);
                 invalidate();
+                return true;
+            case MotionEvent.ACTION_POINTER_UP:
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -93,7 +109,16 @@ public class PaintingView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (isInEditMode()) {
+            canvas.drawRect(0.1f * getWidth(), 0.1f * getHeight(),
+                    0.9f * getWidth(), 0.9f * getHeight(), linePaint);
+        }
 
         canvas.drawBitmap(cacheBitmap, 0, 0, null);
+    }
+
+    public void clear() {
+        bitmapCanvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR);
+        invalidate();
     }
 }
